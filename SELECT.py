@@ -62,10 +62,45 @@ case6 = connection.execute('''
     GROUP BY album.title
     HAVING COUNT(genre.title) > 1;
     ''').fetchall()
-pprint(case6)
+# pprint(case6)
 
 # наименование треков, которые не входят в сборники;
-
+case7 = connection.execute('''
+    SELECT track.title FROM track
+    LEFT JOIN track_collection ON track.id = track_collection.track_id
+    LEFT JOIN collection ON track_collection.collection_id = collection.id
+    GROUP BY track.title
+    HAVING COUNT(collection.title) = 0;
+    ''').fetchall()
+# pprint(case7)
 
 # исполнителя(-ей), написавшего самый короткий по продолжительности трек (теоретически таких треков может быть несколько);
+case8 = connection.execute('''
+    SELECT e.name FROM executor e
+    JOIN executor_album ea ON e.id = ea.executor_id
+    JOIN album a ON ea.album_id = a.id
+    JOIN track t ON a.id = t.album_id
+    GROUP BY e.name
+    HAVING MIN(t.duration) = 
+        (
+            SELECT MIN(duration) FROM track
+        );
+    ''').fetchall()
+# pprint(case8)
+
 # название альбомов, содержащих наименьшее количество треков.
+case9 = connection.execute('''
+    SELECT album.title FROM album
+    JOIN track ON album.id = track.album_id
+    GROUP BY album.title
+    HAVING COUNT(track.title) =
+        (
+            SELECT MIN(count_track) FROM
+                (
+                    SELECT COUNT(track.title) count_track FROM album
+                    JOIN track ON album.id = track.album_id
+                    GROUP BY album.title
+                ) x
+        );
+    ''').fetchall()
+pprint(case9)
